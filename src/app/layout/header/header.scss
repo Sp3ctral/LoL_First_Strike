@@ -61,6 +61,7 @@ header {
     text-align: center;
     font-family: sans-serif;
     text-decoration: none;
+    user-select: none;
     
     &:hover {
       background-color: rgba(38, 38, 113, 0.5);
