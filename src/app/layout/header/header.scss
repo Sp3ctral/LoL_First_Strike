@@ -1,0 +1,79 @@
+header {
+  // Layout
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  
+  // Positioning
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  
+  // Sizing
+  width: 100%;
+  min-height: 3.5rem; /* 56px - standard header height */
+  padding: 1rem 2rem;
+  box-sizing: border-box;
+  
+  // Visual
+  background-color: rgb(13, 13, 40);
+  border-bottom: 1px solid rgb(38, 38, 113); /* Subtle divider */
+  box-shadow: 0 1px 8px rgb(31, 31, 91); /* Subtle elevation */
+  
+  // Responsive behavior
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+// Header sections for better organization
+.header-start,
+.header-center,
+.header-end {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  min-width: 0; /* Allow flex items to shrink */
+}
+
+.header-start > img
+{
+    width: 52px;
+    height: 52px;
+}
+
+// Navigation buttons styling
+.header-center 
+{
+  
+  a {
+    padding: 0.5rem 1rem;
+    background-color: transparent;
+    color: #fff;
+    border: 1px solid rgb(38, 38, 113);
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-align: center;
+    font-family: sans-serif;
+    text-decoration: none;
+    
+    &:hover {
+      background-color: rgba(38, 38, 113, 0.5);
+    }
+    
+    &:focus-visible {
+      outline: 2px solid rgb(255, 255, 255);
+      outline-offset: 2px;
+    }
+  }
+  
+  // Stack buttons vertically on mobile
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+}
