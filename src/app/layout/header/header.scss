@@ -17,9 +17,9 @@ header {
   box-sizing: border-box;
   
   // Visual
-  background-color: rgb(13, 13, 40);
+  background-color: rgb(17, 17, 53);
   border-bottom: 1px solid rgb(38, 38, 113); /* Subtle divider */
-  box-shadow: 0 1px 8px rgb(31, 31, 91); /* Subtle elevation */
+  box-shadow: 0 0 10px rgb(28, 28, 83); /* Subtle elevation */
   
   // Responsive behavior
   @media (max-width: 768px) {
@@ -33,17 +33,12 @@ header {
 // Header sections for better organization
 .header-start,
 .header-center,
-.header-end {
+.header-end 
+{
   display: flex;
   justify-content: center;
   gap: 1rem;
   min-width: 0; /* Allow flex items to shrink */
-}
-
-.header-start > img
-{
-    width: 52px;
-    height: 52px;
 }
 
 // Navigation buttons styling
@@ -74,7 +69,8 @@ header {
   }
   
   // Stack buttons vertically on mobile
-  @media (max-width: 768px) {
+  @media (max-width: 768px) 
+  {
     flex-direction: column;
   }
 }
