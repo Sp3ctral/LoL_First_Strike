@@ -1,0 +1,46 @@
+<!-- 
+ This avoids the content projection quirk with angular
+ since angular can only display ng-content once so we have
+ to wrap it in a template and render a copy of the template 
+ inside an ng-container using the ngTemplateOutlet directive...
+-->
+<ng-template #content>
+  <ng-content />
+</ng-template>
+
+@if (href(); as link) 
+{
+  <!-- Check if it is an external link (starts with http [covers older sites]) -->
+  @if (link.substring(0, 4) === "http") {
+    <a
+      [attr.href]="link"
+      [class]="buttonClasses()"
+      target="_blank" 
+      rel="noopener noreferrer"
+    >
+      <ng-container *ngTemplateOutlet="content" />
+    </a>
+  } 
+  @else 
+  {
+    <!-- Internal Angular Link -->
+    <a
+      [routerLink]="link"
+      [class]="buttonClasses()"
+    >
+      <ng-container *ngTemplateOutlet="content" />
+    </a>
+  }
+}
+<!-- if we have no link then it's just a good ol' form/input button -->
+@else 
+{
+  <button
+    type="type()"
+    [disabled]="disabled()"
+    [class]="buttonClasses()"
+    [attr.role]="role()" 
+  >
+    <ng-container *ngTemplateOutlet="content" />
+  </button>
+}

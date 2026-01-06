@@ -1,14 +1,16 @@
 import { Component } from '@angular/core';
+import { Button } from '../../UI/button/button';
 
 @Component({
   selector: 'app-header',
-  imports: [],
+  imports: [Button],
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })
 export class Header 
 {
-  private readonly tabs = ["stream"];
+  // TODO: Fetch links from a static json maybe? future-proofing thoughts required...
+  private readonly links = ["stream"];
 
   test()
   {
