@@ -1,17 +1,19 @@
-<header>
+<ng-container>
     <div class="header-start">
         <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/MasterYi.png" 
-            alt="Master Yi" height="52px" width="52px">  
+            alt="Master Yi" height="52px" width="52px" />
+        <h1 class="header-title">First Strike</h1>
+  
     </div>
   
   <nav class="header-center">
-    <app-button [disabled]="true">Champions</app-button>
-    <app-button size='large' variant="secondary" href="https://google.com">Home</app-button>
+    <app-button variant="secondary">Champions</app-button>
+    <app-button size='medium' variant="primary" href="https://google.com">Login with Twitch</app-button>
     <app-button href="/">Runes</app-button>
   </nav>
   
   <div class="header-end">
     <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/MasterYi.png" 
-        alt="Master Yi" height="52px" width="52px">
+        alt="Master Yi" height="52px" width="52px" />
   </div>
-</header>
+</ng-container>

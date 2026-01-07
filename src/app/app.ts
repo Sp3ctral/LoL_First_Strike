@@ -10,5 +10,4 @@ import { Header } from './layout/header/header';
 })
 export class App 
 {
-  
 }
