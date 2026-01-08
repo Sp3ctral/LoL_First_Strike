@@ -1,72 +1,72 @@
 :host {
-  // Layout
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  
-  // Positioning
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  
-  // Sizing
-  width: 100%;
-  min-height: 3.5rem; /* 56px - standard header height */
-  padding: 1rem 2rem;
-  box-sizing: border-box;
-  
-  // Visual
-  background-color: rgb(17, 17, 53);
-  border-bottom: 1px solid rgb(38, 38, 113); /* Subtle divider */
-  box-shadow: 0 0 10px rgb(28, 28, 83); /* Subtle elevation */
+    // Layout
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    
+    // Positioning
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    
+    // Sizing
+    width: 100%;
+    min-height: 3.5rem; /* 56px - standard header height */
+    padding: 1rem 2rem;
+    box-sizing: border-box;
+    
+    // Visual
+    background-color: rgb(17, 17, 53);
+    border-bottom: 1px solid rgb(38, 38, 113); /* Subtle divider */
+    box-shadow: 0 0 10px rgb(28, 28, 83); /* Subtle elevation */
 
-  // Responsive behavior
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
+    // Responsive behavior
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+    }
   }
-}
 
-// Header sections for better organization
-.header-start,
-.header-center,
-.header-end 
-{
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  min-width: 0;
-  align-items: center;
-  flex: 1; // Each section takes equal space
-}
-
-.header-start {
-  justify-content: flex-start; // Align content to the left
-}
-
-.header-end {
-  justify-content: flex-end; // Align content to the right
-}
-
-// Remove default h1 margins
-.header-title 
-{
-  margin: 0;
-  padding: 0;
-  font-size: 2rem;
-  line-height: 0rem;
-  font-weight: 200;
-  color: #fff;
-}
-
-// Navigation buttons styling
-.header-center 
-{ 
-  // Stack elements vertically on mobile
-  @media (max-width: 768px) 
+  // Header sections for better organization
+  .header-start,
+  .header-center,
+  .header-end 
   {
-    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    min-width: 0;
+    align-items: center;
+    flex: 1; // Each section takes equal space
   }
+
+  .header-start {
+    justify-content: flex-start; // Align content to the left
+  }
+
+  .header-end {
+    justify-content: flex-end; // Align content to the right
+  }
+
+  // Remove default h1 margins
+  .header-title 
+  {
+    margin: 0;
+    padding: 0;
+    font-size: 2rem;
+    line-height: 0rem;
+    font-weight: 200;
+    color: #fff;
+  }
+
+  // Navigation buttons styling
+  .header-center 
+  { 
+    // Stack elements vertically on mobile
+    @media (max-width: 768px) 
+    {
+      flex-direction: column;
+    }
 }
