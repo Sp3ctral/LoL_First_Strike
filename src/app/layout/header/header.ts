@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { Button } from '../../UI/button/button';
-import { BlinkingIndicator } from '../../UI/blinking-indicator/blinking-indicator';
+import { Button } from '../../ui/button/button';
+import { BlinkingIndicator } from '../../ui/blinking-indicator/blinking-indicator';
 
 @Component({
   selector: 'app-header',
