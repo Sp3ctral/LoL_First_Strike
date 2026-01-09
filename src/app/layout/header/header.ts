@@ -1,10 +1,13 @@
 import { Component } from '@angular/core';
 import { Button } from '../../ui/button/button';
 import { BlinkingIndicator } from '../../ui/blinking-indicator/blinking-indicator';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { gameEnergyArrow } from '@ng-icons/game-icons';
 
 @Component({
   selector: 'app-header',
-  imports: [Button, BlinkingIndicator],
+  imports: [Button, BlinkingIndicator, NgIcon],
+  viewProviders: [provideIcons({ gameEnergyArrow })],
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })

@@ -22,7 +22,8 @@
     box-shadow: 0 0 10px rgb(28, 28, 83); /* Subtle elevation */
 
     // Responsive behavior
-    @media (max-width: 768px) {
+    @media (max-width: 768px) 
+    {
       flex-direction: column;
       gap: 0.5rem;
       padding: 0.5rem 1rem;
@@ -57,7 +58,7 @@
     padding: 0;
     font-size: 2rem;
     line-height: 0rem;
-    font-weight: 200;
+    font-weight: 300;
     color: #fff;
   }
 
