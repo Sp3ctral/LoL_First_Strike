@@ -3,6 +3,14 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": 
+    {
+      "@layout/*": ["app/layout/*"],
+      "@ui/*": ["app/ui/*"],
+      "@services/*": ["app/services/*"],
+      "@guards/*": ["app/guards/*"]
+    },
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
