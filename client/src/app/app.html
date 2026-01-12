@@ -1,0 +1,24 @@
+<app-header />
+
+<main style="padding: 2rem;">
+  <!-- 1. Loading State -->
+  @if (isVerifying()) {
+    <p>Checking subscription status...</p>
+  } 
+  
+  <!-- 2. Logged In State -->
+  @else if (authService.hasAccess()) {
+    <div style="margin-bottom: 1rem;">
+      <button (click)="authService.logout()">Logout</button>
+    </div>
+    <!-- Render the Dashboard or other routed content here -->
+    <router-outlet />
+  } 
+  
+  <!-- 3. Logged Out State -->
+  @else {
+    <h1>Streamer App</h1>
+    <p>Please login to verify your subscription.</p>
+    <button (click)="authService.login()">Login with Twitch</button>
+  }
+</main>
