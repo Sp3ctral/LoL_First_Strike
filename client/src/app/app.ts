@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterOutlet, Router } from '@angular/router';
 import { Header } from '@layout/header/header';
 import { Footer } from '@layout/footer/footer';
-import { AuthService } from './auth.service';
+import { AuthService } from '@services/auth.service';
 
 @Component({
     selector: 'app-root',

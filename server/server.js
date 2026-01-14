@@ -7,38 +7,53 @@ import cookieParser from 'cookie-parser';
 const app = express();
 const PORT = 3000;
 
-// Allow requests the your Angular app
+// Allow requests to the Angular app 
 app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
+
+// Needed to sign, issue, and parse the http cookie
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // --- Configuration ---
 // These better match the Twitch Dev Console settings!!
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
-const REDIRECT_URI = 'http://localhost:3000/auth/twitch/callback'; // Backend callback
-const FRONTEND_URL = 'http://localhost:4200'; // Angular app
-const STREAMER_USERNAME = 'cowsep'; // CHANGE THIS to the streamer's username
+
+// Backend callback twitch will call
+const REDIRECT_URI = 'http://localhost:3000/auth/twitch/callback';
+
+// Angular app url
+const FRONTEND_URL = 'http://localhost:4200'; 
+
+// CHANGE THIS to the streamer's username that you're interested in if you're forking this app
+const STREAMER_USERNAME = 'cowsep'; 
 
 // --- Routes ---
-
 // 1. Login Trigger: Redirects user to Twitch to approve access
-app.get('/auth/twitch', (_, res) => {
+app.get('/auth/twitch', (_, res) => 
+{
     const scopes = 'user:read:subscriptions'; // Required scope to check subs
     const url = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scopes}`;
     res.redirect(url);
 });
 
 // 2. Callback Handler: Twitch redirects here with a code
-app.get('/auth/twitch/callback', async (req, res) => {
+app.get('/auth/twitch/callback', async (req, res) => 
+{
     const { code } = req.query;
     
-    if (!code) return res.redirect(`${FRONTEND_URL}?error=no_code`);
+    // Redirect user to an error screen if something goes wrong...
+    if (!code)
+    {
+        return res.redirect(`${FRONTEND_URL}/error`);
+    }
     
     try 
     {
-        // A. Exchange the code for an Access Token
-        const tokenResponse = await axios.post('https://id.twitch.tv/oauth2/token', null, {
-            params: {
+        // A. Exchange the code for an Access Token, as required by the twitch api
+        const tokenResponse = await axios.post('https://id.twitch.tv/oauth2/token', null, 
+        {
+            params: 
+            {
                 client_id: TWITCH_CLIENT_ID,
                 client_secret: TWITCH_CLIENT_SECRET,
                 code,
@@ -60,7 +75,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
         });
         
         if (streamerResponse.data.data.length === 0) {
-            return res.redirect(`${FRONTEND_URL}?error=streamer_not_found`);
+            return res.redirect(`${FRONTEND_URL}?error`);
         }
         const broadcasterId = streamerResponse.data.data[0].id;
         
@@ -85,7 +100,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
     }
     catch (subError) 
     {
-        console.error('Error:', error.message);
+        console.error('Error:', subError.message);
 
         // Clear cookies
         res.clearCookie('is_subscribed');
