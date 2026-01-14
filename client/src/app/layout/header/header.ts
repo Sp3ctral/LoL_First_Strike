@@ -21,7 +21,6 @@ export class Header
   private destroyRef = inject(DestroyRef);
   
   readonly isAuthenticated = this.authService.hasAccess;
-  readonly isVerifying = this.authService.isLoading;
 
   login() 
   {
