@@ -14,9 +14,11 @@ import { AuthService } from '@services/auth.service';
 })
 export class App
 {
+    private authService = inject(AuthService);
+
     constructor() 
     {
-        inject(AuthService).checkSession()
+        this.authService.checkSession()
             .pipe(takeUntilDestroyed())
             .subscribe();
     }

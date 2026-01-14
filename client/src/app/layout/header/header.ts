@@ -1,9 +1,10 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { Button } from '@ui/button/button';
 import { BlinkingIndicator } from '@ui/blinking-indicator/blinking-indicator';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { gameEnergyArrow } from '@ng-icons/game-icons';
 import { AuthService } from '@services/auth.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-header',
@@ -17,6 +18,7 @@ import { AuthService } from '@services/auth.service';
 export class Header 
 {
   private authService = inject(AuthService);
+  private destroyRef = inject(DestroyRef);
   
   readonly isAuthenticated = this.authService.hasAccess;
   readonly isVerifying = this.authService.isLoading;
@@ -28,6 +30,8 @@ export class Header
 
   logout() 
   {
-    this.authService.logout().subscribe();
+    this.authService.logout()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
   }
 }

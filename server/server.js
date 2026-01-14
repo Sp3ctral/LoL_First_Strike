@@ -3,6 +3,8 @@ import express from 'express';
 import axios from 'axios';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,8 +19,32 @@ const STREAMER_USERNAME = process.env.STREAMER_USERNAME || 'cowsep';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // --- Middleware ---
-app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+app.use(helmet());
+
+// Rate limiting - general API
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Stop the spam. Slow down and try again later.' }
+});
+
+// Rate limiting - stricter for auth endpoints
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many authentication attempts, please try again later.' }
+});
+
+// Apply general limiter to all routes
+app.use(generalLimiter);
+
+app.use(express.json());
 app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 
 // Helper function for cookie options
 const getCookieOptions = () => ({
@@ -31,7 +57,7 @@ const getCookieOptions = () => ({
 
 // --- Routes ---
 // 1. Login Trigger: Redirects user to Twitch to approve access
-app.get('/auth/twitch', (_, res) => 
+app.get('/auth/twitch', authLimiter, (req, res) => 
 {
     const scopes = 'user:read:subscriptions'; // Required scope to check subs
     const url = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scopes}`;
@@ -39,7 +65,7 @@ app.get('/auth/twitch', (_, res) =>
 });
 
 // 2. Callback Handler: Twitch redirects here with a code
-app.get('/auth/twitch/callback', async (req, res) => 
+app.get('/auth/twitch/callback', authLimiter, async (req, res) => 
 {
     const { code } = req.query;
     
