@@ -16,7 +16,6 @@ const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI || 'http://localhost:3000/auth/twitch/callback';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4200';
 const STREAMER_USERNAME = process.env.STREAMER_USERNAME || 'cowsep';
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // --- Middleware ---
 app.use(helmet());
@@ -50,7 +49,7 @@ app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 const getCookieOptions = () => ({
     httpOnly: true,
     signed: true,
-    secure: IS_PRODUCTION,
+    secure: true,
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000
 });
