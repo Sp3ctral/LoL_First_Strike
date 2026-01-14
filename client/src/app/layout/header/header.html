@@ -2,18 +2,26 @@
     <div class="header-start">
       <ng-icon color="rgb(235 31 31)" size="3rem" name="gameEnergyArrow" />
       <h1 class="header-title">First Strike</h1>
-  
     </div>
   
-  <nav class="header-center">
-    <app-button variant="secondary">Champions</app-button>
-    <app-button size='medium' variant="primary" href="https://google.com">Login with Twitch</app-button>
-    <app-button href="/">Runes</app-button>
-    <app-blinking-indicator [isLive]="false" />
-  </nav>
+    <nav class="header-center">
+      <app-button variant="secondary">Champions</app-button>
+      <app-button href="/">Runes</app-button>
+      <app-blinking-indicator [isLive]="false" />
+    </nav>
   
-  <div class="header-end">
-    <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/MasterYi.png" 
-        alt="Master Yi" height="52px" width="52px" />
-  </div>
-</ng-container>
+    <div class="header-end">
+      @if (isAuthenticated()) 
+      {
+        <app-button size="medium" variant="outline" (click)="logout()">
+          Logout
+        </app-button>
+      } 
+      @else 
+      {
+        <app-button size="medium" variant="primary" (click)="login()">
+          Login with Twitch
+        </app-button>
+      }
+    </div>
+  </ng-container>

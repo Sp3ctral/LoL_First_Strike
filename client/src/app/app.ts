@@ -1,40 +1,23 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterOutlet } from '@angular/router';
 import { Header } from '@layout/header/header';
 import { Footer } from '@layout/footer/footer';
 import { AuthService } from '@services/auth.service';
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, Header],
+    imports: [RouterOutlet, Header, Footer],
     templateUrl: './app.html',
-    styleUrl: './app.scss'
+    styleUrl: './app.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class App implements OnInit
+export class App
 {
-    public authService = inject(AuthService);
-    private router = inject(Router);
-    
-    // Local signal for loading state
-    isVerifying = signal(false);
-
-    ngOnInit() 
+    constructor() 
     {
-        this.isVerifying.set(true);
-        this.authService.checkSession().subscribe(
-        {
-            next: (res) => {
-                this.authService.isSubscribed.set(res.subscribed);
-                if (res.subscribed) 
-                {
-                    this.router.navigate(['/']);
-                }
-                this.isVerifying.set(false);
-            },
-            error: () => {
-                this.authService.isSubscribed.set(false);
-                this.isVerifying.set(false);
-            }
-        });
+        inject(AuthService).checkSession()
+            .pipe(takeUntilDestroyed())
+            .subscribe();
     }
 }

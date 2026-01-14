@@ -4,7 +4,7 @@ import { NgTemplateOutlet } from '@angular/common';
 
 @Component({
   selector: 'app-button',
-  templateUrl: 'button.html',
+  templateUrl: './button.html',
   styleUrl: './button.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, NgTemplateOutlet],

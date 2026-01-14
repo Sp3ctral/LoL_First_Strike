@@ -1,6 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './auth.guard';
 
 export const routes: Routes = [
-  
+  {
+    path: '',
+    loadComponent: () => import('@pages/landing/landing').then(m => m.Landing)
+  },
+  {
+    path: '**',
+    redirectTo: ''
+  }
 ];

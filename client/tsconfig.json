@@ -6,10 +6,12 @@
     "baseUrl": "./src",
     "paths": 
     {
+      "@environments/*": ["environments/*"],
       "@layout/*": ["app/layout/*"],
       "@ui/*": ["app/ui/*"],
       "@services/*": ["app/services/*"],
-      "@guards/*": ["app/guards/*"]
+      "@guards/*": ["app/guards/*"],
+      "@pages/*": ["app/pages/*"]
     },
     "strict": true,
     "noImplicitOverride": true,

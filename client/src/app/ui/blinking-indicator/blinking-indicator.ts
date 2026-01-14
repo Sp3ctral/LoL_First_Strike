@@ -1,14 +1,16 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-blinking-indicator',
   imports: [],
   templateUrl: './blinking-indicator.html',
   styleUrl: './blinking-indicator.scss',
+  
   host: 
   { 
     '[class]': 'indicatorClasses()'
-  }
+  },
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BlinkingIndicator 
 {

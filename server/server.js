@@ -5,27 +5,29 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 const app = express();
-const PORT = 3000;
-
-// Allow requests to the Angular app 
-app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
-
-// Needed to sign, issue, and parse the http cookie
-app.use(cookieParser(process.env.COOKIE_SECRET));
+const PORT = process.env.PORT || 3000;
 
 // --- Configuration ---
 // These better match the Twitch Dev Console settings!!
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI || 'http://localhost:3000/auth/twitch/callback';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4200';
+const STREAMER_USERNAME = process.env.STREAMER_USERNAME || 'cowsep';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// Backend callback twitch will call
-const REDIRECT_URI = 'http://localhost:3000/auth/twitch/callback';
+// --- Middleware ---
+app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
-// Angular app url
-const FRONTEND_URL = 'http://localhost:4200'; 
-
-// CHANGE THIS to the streamer's username that you're interested in if you're forking this app
-const STREAMER_USERNAME = 'cowsep'; 
+// Helper function for cookie options
+const getCookieOptions = () => ({
+    httpOnly: true,
+    signed: true,
+    secure: IS_PRODUCTION,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
+});
 
 // --- Routes ---
 // 1. Login Trigger: Redirects user to Twitch to approve access
@@ -74,55 +76,61 @@ app.get('/auth/twitch/callback', async (req, res) =>
             headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${accessToken}` },
         });
         
-        if (streamerResponse.data.data.length === 0) {
+        if (streamerResponse.data.data.length === 0) 
+        {
             return res.redirect(`${FRONTEND_URL}?error`);
         }
         const broadcasterId = streamerResponse.data.data[0].id;
         
         // D. Check Subscription Status
-        await axios.get(`https://api.twitch.tv/helix/subscriptions/user`, {
+        const subResponse = await axios.get(`https://api.twitch.tv/helix/subscriptions/user`, {
             headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${accessToken}` },
             params: { broadcaster_id: broadcasterId, user_id: userId },
         });
         
-        // SUCCESS: Set HttpOnly Cookie to prevent tampering if the subscriptions endpoints does not
-        // return a 404 error which means user is not subscribed
-        res.cookie('is_subscribed', 'true', 
-        {
-            httpOnly: true,
-            signed: true,   
-            secure: true,  
-            maxAge: 24 * 60 * 60 * 1000 // 1 day
-        });
+        const isSubscribed = subResponse.data.data.length > 0;
         
-        // Redirect cleanly to root
-        res.redirect(FRONTEND_URL);
+        if (isSubscribed) 
+        {
+            res.cookie('is_subscribed', 'true', getCookieOptions());
+            res.redirect(FRONTEND_URL);
+        } 
+        else 
+        {
+            res.clearCookie('is_subscribed');
+            res.redirect(`${FRONTEND_URL}?subscription_required=true`);
+        }
     }
-    catch (subError) 
+    catch (error) 
     {
-        console.error('Error:', subError.message);
-
-        // Clear cookies
-        res.clearCookie('is_subscribed');
-        res.redirect(`${FRONTEND_URL}/error`);
+        console.error('Auth error:', error.response?.status, error.message);
+        
+        if (error.response?.status === 404) 
+        {
+            // Not subscribed
+            res.clearCookie('is_subscribed');
+            res.redirect(`${FRONTEND_URL}?subscription_required=true`);
+        } 
+        else 
+        {
+            // Other errors
+            res.clearCookie('is_subscribed');
+            res.redirect(`${FRONTEND_URL}?error=auth_failed`);
+        }
     }
 });
 
 // 3. Check Session
 app.get('/auth/session', (req, res) => 
 {
-  // Check if the signed cookie exists and is valid
-  if (req.signedCookies.is_subscribed === 'true') {
-    res.json({ subscribed: true });
-  } else {
-    res.json({ subscribed: false });
-  }
+    const isSubscribed = req.signedCookies.is_subscribed === 'true';
+    res.json({ subscribed: isSubscribed });
 });
 
-// 4. Logout
-app.post('/auth/logout', (_, res) => {
-  res.clearCookie('is_subscribed');
-  res.json({ success: true });
+app.post('/auth/logout', (_, res) => 
+{
+    res.clearCookie('is_subscribed');
+    res.json({ success: true });
 });
 
 app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));

@@ -1,0 +1,18 @@
+<ng-container>
+  @if (isLoading()) 
+  {
+    <h1>Loading...</h1>
+  } 
+  @else if (hasAccess()) 
+  {
+    <h1>Welcome, Subscriber! 🎉</h1>
+    <p>You have successfully unlocked exclusive content.</p>
+    <p>Explore the app to get information about League of Legends champions, runes, and more!</p>
+  } 
+  @else 
+  {
+    <h1>Welcome to First Strike</h1>
+    <p>An Angular web application that gives you all the information you need to destroy your lane opponent.</p>
+    <p>Login with Twitch to access exclusive subscriber content!</p>
+  }
+</ng-container>
