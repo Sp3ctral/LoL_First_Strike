@@ -15,7 +15,6 @@ export class AuthService
     private _isSubscribed = signal<boolean | undefined>(undefined);
     
     // Expose as readonly
-    readonly isSubscribed = this._isSubscribed.asReadonly();
     readonly hasAccess = computed(() => this._isSubscribed() === true);
     readonly isLoading = computed(() => this._isSubscribed() === undefined);
     
