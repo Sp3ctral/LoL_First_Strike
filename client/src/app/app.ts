@@ -4,10 +4,11 @@ import { RouterOutlet } from '@angular/router';
 import { Header } from '@layout/header/header';
 import { Footer } from '@layout/footer/footer';
 import { AuthService } from '@services/auth';
+import { Loading } from '@ui/loading/loading';
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, Header, Footer],
+    imports: [RouterOutlet, Loading, Header, Footer],
     templateUrl: './app.html',
     styleUrl: './app.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
