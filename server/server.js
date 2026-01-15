@@ -10,32 +10,57 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- Configuration ---
-// These better match the Twitch Dev Console settings!!
+// These better match the Twitch Dev Console settings!
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI || 'http://localhost:3000/auth/twitch/callback';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4200';
 const STREAMER_USERNAME = process.env.STREAMER_USERNAME || 'cowsep';
 
+// Error definitions for redirect-rendered errors
+const REDIRECT_ERRORS = Object.freeze({
+    INVALID_REQUEST: { code: 'invalid_request', message: 'Your request is invalid.' },
+    NOT_SUBSCRIBED: { code: 'not_subscribed', message: 'Subscription required' },
+    AUTH_FAILED: { code: 'auth_failed', message: 'Authentication failed' },
+    UNKNOWN: { code: 'unknown', message: 'Something went wrong' }
+});
+
+// Error definitions for API-only responses (no frontend rendering)
+const API_ERRORS = Object.freeze({
+    STREAMER_NOT_FOUND: 'Streamer not found',
+    NO_REFRESH_TOKEN: 'No refresh token found',
+    REFRESH_FAILED: 'Token refresh failed',
+    RATE_LIMIT_GENERAL: 'Stop the spam. Slow down and try again later.',
+    RATE_LIMIT_AUTH: 'Too many authentication attempts, please try again later.'
+});
+
 // --- Middleware ---
 app.use(helmet());
 
 // Rate limiting - general API
-const generalLimiter = rateLimit({
+const generalLimiter = rateLimit(
+{
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // 100 requests per window
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'Stop the spam. Slow down and try again later.' }
+    message: 
+    {
+        error: API_ERRORS.RATE_LIMIT_GENERAL
+    }
 });
 
 // Rate limiting - stricter for auth endpoints
-const authLimiter = rateLimit({
+const authLimiter = rateLimit(
+{
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10, // 10 requests per window
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'Too many authentication attempts, please try again later.' }
+    message: 
+    {
+        error: API_ERRORS.RATE_LIMIT_AUTH
+    }
 });
 
 // Apply general limiter to all routes
@@ -46,13 +71,87 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 
 // Helper function for cookie options
-const getCookieOptions = () => ({
+const getCookieOptions = () => (
+{
     httpOnly: true,
     signed: true,
     secure: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 7 * 24 * 60 * 60 * 1000 
 });
+
+// Map Twitch API error statuses to frontend error codes
+const getAuthErrorType = (status) => (
+    status === 404 
+        ? REDIRECT_ERRORS.NOT_SUBSCRIBED
+        : status === 401 
+        ? REDIRECT_ERRORS.AUTH_FAILED
+        : status === 400
+        ? REDIRECT_ERRORS.INVALID_REQUEST
+        : REDIRECT_ERRORS.UNKNOWN
+);
+
+const twitchHeaders = (accessToken) => (
+{
+    'Client-ID': TWITCH_CLIENT_ID,
+    'Authorization': `Bearer ${accessToken}`
+});
+
+const refreshAccessToken = async (refreshToken) => 
+{
+    const tokenResponse = await axios.post('https://id.twitch.tv/oauth2/token', null, 
+    {
+        params: 
+        {
+            client_id: TWITCH_CLIENT_ID,
+            client_secret: TWITCH_CLIENT_SECRET,
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken,
+        },
+    });
+
+    return {
+        accessToken: tokenResponse.data.access_token,
+        refreshToken: tokenResponse.data.refresh_token ?? refreshToken
+    };
+};
+
+const twitchGetWithRefresh = async (url, tokens, config = {}) => 
+{
+    try 
+    {
+        const response = await axios.get(url, 
+        {
+            ...config,
+            headers: 
+            {
+                ...twitchHeaders(tokens.accessToken),
+                ...(config.headers ?? {})
+            }
+        });
+        return { response, tokens };
+    }
+    catch (error) 
+    {
+        const status = error.response?.status;
+        if (status !== 401 || !tokens.refreshToken) 
+        {
+            throw error;
+        }
+
+        const newTokens = await refreshAccessToken(tokens.refreshToken);
+        const response = await axios.get(url, 
+        {
+            ...config,
+            headers: 
+            {
+                ...twitchHeaders(newTokens.accessToken),
+                ...(config.headers ?? {})
+            }
+        });
+        return { response, tokens: newTokens };
+    }
+};
 
 // --- Routes ---
 // 1. Login Trigger: Redirects user to Twitch to approve access
@@ -68,15 +167,13 @@ app.get('/auth/twitch/callback', authLimiter, async (req, res) =>
 {
     const { code } = req.query;
     
-    // Redirect user to an error screen if something goes wrong...
     if (!code)
     {
-        return res.redirect(`${FRONTEND_URL}/error`);
+        return res.redirect(`${FRONTEND_URL}/error?code=${encodeURIComponent(REDIRECT_ERRORS.INVALID_REQUEST.code)}`);
     }
     
     try 
     {
-        // A. Exchange the code for an Access Token, as required by the twitch api
         const tokenResponse = await axios.post('https://id.twitch.tv/oauth2/token', null, 
         {
             params: 
@@ -88,60 +185,46 @@ app.get('/auth/twitch/callback', authLimiter, async (req, res) =>
                 redirect_uri: REDIRECT_URI,
             },
         });
-        const accessToken = tokenResponse.data.access_token;
         
-        // B. Get the User's ID (the person logging in)
-        const userResponse = await axios.get('https://api.twitch.tv/helix/users', {
-            headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${accessToken}` },
-        });
-        const userId = userResponse.data.data[0].id;
-        
-        // C. Get the Streamer's ID (target channel)
-        const streamerResponse = await axios.get(`https://api.twitch.tv/helix/users?login=${STREAMER_USERNAME}`, {
-            headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${accessToken}` },
-        });
-        
-        if (streamerResponse.data.data.length === 0) 
+        let tokens = 
         {
-            return res.redirect(`${FRONTEND_URL}?error`);
-        }
-        const broadcasterId = streamerResponse.data.data[0].id;
+            accessToken: tokenResponse.data.access_token,
+            refreshToken: tokenResponse.data.refresh_token
+        };
         
-        // D. Check Subscription Status
-        const subResponse = await axios.get(`https://api.twitch.tv/helix/subscriptions/user`, {
-            headers: { 'Client-ID': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${accessToken}` },
-            params: { broadcaster_id: broadcasterId, user_id: userId },
-        });
+        let result = await twitchGetWithRefresh('https://api.twitch.tv/helix/users', tokens);
+        tokens = result.tokens;
+        const userId = result.response.data.data[0].id;
         
-        const isSubscribed = subResponse.data.data.length > 0;
+        result = await twitchGetWithRefresh(
+            `https://api.twitch.tv/helix/users?login=${STREAMER_USERNAME}`, 
+            tokens
+        );
+        tokens = result.tokens;
+        const broadcasterId = result.response.data.data[0].id;
         
-        if (isSubscribed) 
-        {
-            res.cookie('is_subscribed', 'true', getCookieOptions());
-            res.redirect(FRONTEND_URL);
-        } 
-        else 
-        {
-            res.clearCookie('is_subscribed');
-            res.redirect(`${FRONTEND_URL}?subscription_required=true`);
-        }
+        result = await twitchGetWithRefresh(
+            'https://api.twitch.tv/helix/subscriptions/user', 
+            tokens,
+            { params: { broadcaster_id: broadcasterId, user_id: userId } }
+        );
+        tokens = result.tokens;
+       
+        // Success - user is subscribed
+        res.cookie('is_subscribed', 'true', getCookieOptions());
+        res.cookie('refresh_token', tokens.refreshToken, getCookieOptions());
+        res.redirect(`${FRONTEND_URL}`);
     }
     catch (error) 
     {
-        console.error('Auth error:', error.response?.status, error.message);
-        
-        if (error.response?.status === 404) 
-        {
-            // Not subscribed
-            res.clearCookie('is_subscribed');
-            res.redirect(`${FRONTEND_URL}?subscription_required=true`);
-        } 
-        else 
-        {
-            // Other errors
-            res.clearCookie('is_subscribed');
-            res.redirect(`${FRONTEND_URL}?error=auth_failed`);
-        }
+        console.error('ERROR:', error.response?.status, error.message);
+        res.clearCookie('is_subscribed');
+        res.clearCookie('refresh_token');
+
+        const status = error.response?.status;
+        const errorType = getAuthErrorType(status);
+
+        res.redirect(`${FRONTEND_URL}/error?code=${encodeURIComponent(errorType.code)}`);
     }
 });
 
@@ -152,10 +235,63 @@ app.get('/auth/session', (req, res) =>
     res.json({ subscribed: isSubscribed });
 });
 
+// Add new endpoint for token refresh
+app.post('/auth/refresh', authLimiter, async (req, res) => 
+{
+    const refreshToken = req.signedCookies.refresh_token;
+
+    if (!refreshToken) 
+    {
+        const errorType = REDIRECT_ERRORS.INVALID_REQUEST;
+        return res.status(400).json({ error: errorType.code, message: errorType.message });
+    }
+
+    try 
+    {
+        let tokens = await refreshAccessToken(refreshToken);
+        
+        let result = await twitchGetWithRefresh('https://api.twitch.tv/helix/users', tokens);
+        tokens = result.tokens;
+        const userId = result.response.data.data[0].id;
+        
+        result = await twitchGetWithRefresh(
+            `https://api.twitch.tv/helix/users?login=${STREAMER_USERNAME}`, 
+            tokens
+        );
+        tokens = result.tokens;
+        const broadcasterId = result.response.data.data[0].id;
+        
+        result = await twitchGetWithRefresh(
+            `https://api.twitch.tv/helix/subscriptions/user`, 
+            tokens,
+            { params: { broadcaster_id: broadcasterId, user_id: userId } }
+        );
+        tokens = result.tokens;
+
+        // Success - user is subscribed
+        res.cookie('is_subscribed', 'true', getCookieOptions());
+        res.cookie('refresh_token', tokens.refreshToken, getCookieOptions());
+        res.json({ subscribed: true });
+    }
+    catch (error) 
+    {
+        console.error('Token refresh error:', error.response?.status, error.message);
+        res.clearCookie('is_subscribed');
+        res.clearCookie('refresh_token');
+
+        const status = error.response?.status;
+        const errorType = getAuthErrorType(status);
+
+        res.status(status ?? 500).json({ error: errorType.code, message: errorType.message });
+    }
+});
+
+// Update logout to clear refresh token
 app.post('/auth/logout', (_, res) => 
 {
     res.clearCookie('is_subscribed');
-    res.json({ success: true });
+    res.clearCookie('refresh_token');
+    return res.sendStatus(204);
 });
 
 app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));

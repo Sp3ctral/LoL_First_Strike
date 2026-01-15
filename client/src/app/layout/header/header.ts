@@ -3,7 +3,7 @@ import { Button } from '@ui/button/button';
 import { BlinkingIndicator } from '@ui/blinking-indicator/blinking-indicator';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { gameEnergyArrow } from '@ng-icons/game-icons';
-import { AuthService } from '@services/auth.service';
+import { AuthService } from '@services/auth';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({

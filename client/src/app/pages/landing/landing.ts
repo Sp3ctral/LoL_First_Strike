@@ -1,5 +1,5 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { AuthService } from '@services/auth.service';
+import { AuthService } from '@services/auth';
 
 @Component({
   selector: 'app-landing',
@@ -14,5 +14,4 @@ export class Landing
 
   // Expose signals to template
   readonly hasAccess = this.authService.hasAccess;
-  readonly isLoading = this.authService.isLoading;
 }

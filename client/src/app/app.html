@@ -1,5 +1,12 @@
 <app-header />
 <main>
-  <router-outlet />
+  @if (isLoading()) 
+  {
+    <h1>Loading...</h1>
+  }
+  @else 
+  {
+    <router-outlet />
+  }
 </main>
 <app-footer />

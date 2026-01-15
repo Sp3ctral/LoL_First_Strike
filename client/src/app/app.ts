@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 import { Header } from '@layout/header/header';
 import { Footer } from '@layout/footer/footer';
-import { AuthService } from '@services/auth.service';
+import { AuthService } from '@services/auth';
 
 @Component({
     selector: 'app-root',
@@ -15,6 +15,7 @@ import { AuthService } from '@services/auth.service';
 export class App
 {
     private authService = inject(AuthService);
+    readonly isLoading = this.authService.isLoading;
 
     constructor() 
     {

@@ -1,7 +1,7 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { tap, catchError, of } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { tap, catchError, of, switchMap } from 'rxjs';
 import { environment } from '@environments/environment';
 
 @Injectable({
@@ -32,8 +32,31 @@ export class AuthService
             { withCredentials: true }
         ).pipe(
             tap(response => this._isSubscribed.set(response.subscribed)),
-            catchError(error => {
+            catchError(error => 
+            {
+                if (error instanceof HttpErrorResponse && error.status === 401)
+                {
+                    return this.refreshSession();
+                }
                 console.error('Session check failed:', error);
+                this._isSubscribed.set(false);
+                return of({ subscribed: false });
+            })
+        );
+    }
+
+    // Hide the refresh flow from other components, forcing them to use checkSession
+    private refreshSession() 
+    {
+        return this.http.post<{ subscribed: boolean }>(
+            `${this.API_URL}/auth/refresh`,
+            {},
+            { withCredentials: true }
+        ).pipe(
+            tap(response => this._isSubscribed.set(response.subscribed)),
+            catchError(error => 
+            {
+                console.error('Token refresh failed:', error);
                 this._isSubscribed.set(false);
                 return of({ subscribed: false });
             })
@@ -42,20 +65,22 @@ export class AuthService
 
     logout() 
     {
-        return this.http.post(
+        return this.http.post<void>(
             `${this.API_URL}/auth/logout`,
             {},
             { withCredentials: true }
         ).pipe(
-            tap(() => {
+            tap(() => 
+            {
                 this._isSubscribed.set(false);
                 this.router.navigate(['/']);
             }),
-            catchError(error => {
+            catchError(error => 
+            {
                 console.error('Logout failed:', error);
                 this._isSubscribed.set(false);
                 this.router.navigate(['/']);
-                return of(null);
+                return of(void 0);
             })
         );
     }
