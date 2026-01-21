@@ -1,2 +1,2 @@
 <div class="indicator-dot"></div>
-<span>{{ isLive() ? "LIVE" : "OFFLINE" }}</span>
+<span>{{ isLive() === undefined ? "loading" : isLive() ? "LIVE" : "OFFLINE" }}</span>

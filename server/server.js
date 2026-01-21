@@ -153,6 +153,50 @@ const twitchGetWithRefresh = async (url, tokens, config = {}) =>
     }
 };
 
+/**
+ * Cached Twitch app access token (client_credentials flow).
+ * This is NOT a user token, it is safe for public endpoints.
+ */
+let appAccessToken = null;
+let appAccessTokenExpiresAt = 0;
+
+/**
+ * Gets a Twitch app access token using client credentials and caches it
+ * until shortly before expiration.
+ * @returns {Promise<string>} Twitch app access token
+ */
+const getAppAccessToken = async () => 
+{
+    const now = Date.now();
+
+    // 60s buffer prevents edge cases where token expires mid-request.
+    if (appAccessToken && appAccessTokenExpiresAt > now + 60_000) 
+    {
+        return appAccessToken;
+    }
+
+    // Client credentials flow -> app access token (no user scopes).
+    const tokenResponse = await axios.post('https://id.twitch.tv/oauth2/token', null, 
+    {
+        params: 
+        {
+            client_id: TWITCH_CLIENT_ID,
+            client_secret: TWITCH_CLIENT_SECRET,
+            grant_type: 'client_credentials',
+        },
+    });
+
+    appAccessToken = tokenResponse.data.access_token;
+
+    // Twitch gives seconds for token expiration
+    const expiresIn = tokenResponse.data.expires_in ?? 0; 
+
+    // Sets the absolute expiration timestamp (in milliseconds) for the cached app token
+    appAccessTokenExpiresAt = now + expiresIn * 1000;
+
+    return appAccessToken;
+};
+
 // --- Routes ---
 // 1. Login Trigger: Redirects user to Twitch to approve access
 app.get('/auth/twitch', authLimiter, (req, res) => 
@@ -233,6 +277,38 @@ app.get('/auth/session', (req, res) =>
 {
     const isSubscribed = req.signedCookies.is_subscribed === 'true';
     res.json({ subscribed: isSubscribed });
+});
+
+/**
+ * Public live status endpoint.
+ * Uses app token (not user token) so it works even when no one is logged in.
+ */
+app.get('/stream/status', async (_, res) => 
+{
+    try 
+    {
+        const token = await getAppAccessToken();
+        const response = await axios.get('https://api.twitch.tv/helix/streams', 
+        {
+            params: { user_login: STREAMER_USERNAME },
+            headers: 
+            {
+                'Client-ID': TWITCH_CLIENT_ID,
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        // Twitch returns an array of streams. Non-empty means streamer is live.
+        const isLive = (response.data.data?.length ?? 0) > 0;
+        res.json({ isLive });
+    }
+    catch (error) 
+    {
+        console.error('Live status error:', error.response?.status, error.message);
+        
+        // Fail-safe: offline on error to avoid false/misleading "live".
+        res.status(500).json({ isLive: false });
+    }
 });
 
 // Add new endpoint for token refresh
