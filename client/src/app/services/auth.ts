@@ -1,7 +1,7 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { tap, catchError, of, switchMap } from 'rxjs';
+import { tap, catchError, of } from 'rxjs';
 import { environment } from '@environments/environment';
 
 @Injectable({

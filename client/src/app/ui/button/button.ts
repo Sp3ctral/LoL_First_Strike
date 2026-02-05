@@ -14,12 +14,18 @@ import { NgTemplateOutlet } from '@angular/common';
   }
 })
 export class Button {
-  // Inputs
+  /**
+   * This button component becomes a form button based on 
+   * if a link @param href is provided. If it is not 
+   * provided then the button becomes a submit/form button.
+   * Otherwise the button masquerades becomes an anchor element
+   * because anchor elements work natively with Angular routing.
+   */
   href = input<string>();
   variant = input<'primary' | 'secondary' | 'outline'>('outline');
   size = input<'small' | 'medium' | 'large'>('medium');
   disabled = input<boolean>(false);
-  role = input<string>('button');
+  role = input<'a' | 'button'>('button');
   
   // Computed classes
   buttonClasses = computed(() => {

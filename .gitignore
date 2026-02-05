@@ -44,3 +44,7 @@ Thumbs.db
 
 # ENV secrets
 .env
+
+# AI Stuff
+.gemini/*
+.github/*

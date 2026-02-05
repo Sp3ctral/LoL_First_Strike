@@ -1,0 +1,90 @@
+<div class="calculator-container">
+  <h1>Champion Damage Calculator</h1>
+
+  <div class="calculator-grid">
+    <div class="input-area">
+      <form [formGroup]="form">
+        <!-- Champion Selection -->
+        <section class="card">
+          <h3>Champion Selection</h3>
+          <div class="field">
+            <label for="champion-select">Select Champion</label>
+            <select id="champion-select" formControlName="championId">
+              <option value="">-- Choose a Champion --</option>
+              @for (champ of champions(); track champ.id) {
+                <option [value]="champ.id">{{ champ.name }}</option>
+              }
+            </select>
+          </div>
+        </section>
+
+        <!-- Items Selection -->
+        <section class="card items-container">
+          <h3>Items</h3>
+          <div formArrayName="itemIds">
+            @for (itemCtrl of form.controls.itemIds.controls; track $index) {
+              <div class="item-row">
+                <select [formControlName]="$index">
+                  <option value="">-- Choose an Item --</option>
+                  @for (item of items(); track item.id) {
+                    <option [value]="item.id">{{ item.name }}</option>
+                  }
+                </select>
+                <button type="button" class="btn-remove" (click)="removeItem($index)">✕</button>
+              </div>
+            }
+          </div>
+          <button type="button" class="btn-add" (click)="addItem()">+ Add Item</button>
+        </section>
+
+        <!-- Stat Adjustments -->
+        <section class="card stats-section">
+          <h3>Stat Adjustments (Manual Overrides)</h3>
+          <div class="stats-grid">
+            <div class="field">
+              <label>Attack Damage</label>
+              <input type="number" formControlName="attackDamage" />
+            </div>
+            <div class="field">
+              <label>Ability Power</label>
+              <input type="number" formControlName="abilityPower" />
+            </div>
+            <div class="field">
+              <label>Armor</label>
+              <input type="number" formControlName="armor" />
+            </div>
+            <div class="field">
+              <label>Magic Resist</label>
+              <input type="number" formControlName="magicResist" />
+            </div>
+          </div>
+        </section>
+      </form>
+    </div>
+
+    <!-- Results Display -->
+    <aside class="results-area">
+      <section class="card results-section">
+        <h2>Total Stats</h2>
+        <div class="results-grid">
+          <div class="result-item">
+            <span class="label">Attack Damage</span>
+            <span class="value">{{ totalStats().attackDamage }}</span>
+          </div>
+          <div class="result-item">
+            <span class="label">Ability Power</span>
+            <span class="value">{{ totalStats().abilityPower }}</span>
+          </div>
+          <div class="result-item">
+            <span class="label">Armor</span>
+            <span class="value">{{ totalStats().armor }}</span>
+          </div>
+          <div class="result-item">
+            <span class="label">Magic Resist</span>
+            <span class="value">{{ totalStats().magicResist }}</span>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
