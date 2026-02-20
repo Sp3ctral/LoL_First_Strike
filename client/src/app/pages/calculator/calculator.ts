@@ -1,154 +1,122 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ChampionDataService, type ChampionOption } from '@services/champion-data';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { ionSearchOutline, ionClose } from '@ng-icons/ionicons';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { startWith } from 'rxjs';
+
+interface Stats {
+  attackDamage: number;
+  abilityPower: number;
+  armor: number;
+  magicResist: number;
+}
+
+interface Champion {
+  id: string;
+  name: string;
+  baseStats: Stats;
+}
+
+interface Item {
+  id: string;
+  name: string;
+  stats: Partial<Stats>;
+}
+
+const CHAMPIONS: Champion[] = [
+  {
+    id: 'ahri',
+    name: 'Ahri',
+    baseStats: { attackDamage: 53, abilityPower: 0, armor: 21, magicResist: 30 },
+  },
+  {
+    id: 'darius',
+    name: 'Darius',
+    baseStats: { attackDamage: 64, abilityPower: 0, armor: 39, magicResist: 32 },
+  },
+];
+
+const ITEMS: Item[] = [
+  { id: 'long-sword', name: 'Long Sword', stats: { attackDamage: 10 } },
+  { id: 'amplifying-tome', name: 'Amplifying Tome', stats: { abilityPower: 20 } },
+  { id: 'cloth-armor', name: 'Cloth Armor', stats: { armor: 15 } },
+];
 
 @Component({
   selector: 'app-calculator',
-  imports: [ReactiveFormsModule, NgIcon],
+  imports: [ReactiveFormsModule],
   templateUrl: './calculator.html',
   styleUrl: './calculator.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  viewProviders: [provideIcons({ ionSearchOutline, ionClose })],
-  host: {
-    '(document:click)': 'onDocumentClick($event)',
-  },
 })
 export class Calculator {
-  private championData = inject(ChampionDataService);
-  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private fb = inject(NonNullableFormBuilder);
 
-  readonly form = new FormGroup({
-    championId: new FormControl<string | null>(null),
-    championQuery: new FormControl('', { nonNullable: true }),
+  champions = signal(CHAMPIONS);
+  items = signal(ITEMS);
+
+  form = this.fb.group({
+    championId: [''],
+    itemIds: this.fb.array<string>([]),
+    // Manual overrides
+    attackDamage: [0],
+    abilityPower: [0],
+    armor: [0],
+    magicResist: [0],
   });
 
-  readonly championIdControl = this.form.controls.championId;
-  readonly championQueryControl = this.form.controls.championQuery;
-  readonly isDropdownOpen = signal(false);
-
-  readonly champions = this.championData.champions;
-  readonly loading = this.championData.loading;
-  readonly loadError = this.championData.error;
-
-  private championQuery = toSignal(this.championQueryControl.valueChanges, {
-    initialValue: this.championQueryControl.value,
+  // Convert form value changes to signals
+  private formValue = toSignal(this.form.valueChanges.pipe(startWith(this.form.value)), {
+    initialValue: this.form.value,
   });
 
-  private selectedChampionId = toSignal(this.championIdControl.valueChanges, {
-    initialValue: this.championIdControl.value,
+  selectedChampion = computed(() => {
+    const id = this.formValue().championId;
+    return this.champions().find((c) => c.id === id);
   });
 
-  readonly selectedChampion = computed(() => {
-    const championId = this.selectedChampionId();
-
-    if (!championId) {
-      return undefined;
-    }
-
-    return this.champions().find(champion => champion.id === championId);
+  selectedItems = computed(() => {
+    const ids = this.formValue().itemIds ?? [];
+    return ids.map((id) => this.items().find((i) => i.id === id)).filter((i): i is Item => !!i);
   });
 
-  readonly filteredChampions = computed(() => {
-    const query = this.championQuery().trim().toLowerCase();
-    const champions = this.champions();
+  // Total stats combining base + items + manual overrides
+  totalStats = computed(() => {
+    const champ = this.selectedChampion();
+    const items = this.selectedItems();
+    const val = this.formValue();
 
-    if (!query) {
-      return champions;
-    }
+    const overrides = {
+      attackDamage: val.attackDamage ?? 0,
+      abilityPower: val.abilityPower ?? 0,
+      armor: val.armor ?? 0,
+      magicResist: val.magicResist ?? 0,
+    };
 
-    return champions.filter(champion => champion.name.toLowerCase().startsWith(query));
+    const base = champ?.baseStats ?? { attackDamage: 0, abilityPower: 0, armor: 0, magicResist: 0 };
+
+    const itemBonus = items.reduce(
+      (acc, item) => ({
+        attackDamage: acc.attackDamage + (item.stats.attackDamage ?? 0),
+        abilityPower: acc.abilityPower + (item.stats.abilityPower ?? 0),
+        armor: acc.armor + (item.stats.armor ?? 0),
+        magicResist: acc.magicResist + (item.stats.magicResist ?? 0),
+      }),
+      { attackDamage: 0, abilityPower: 0, armor: 0, magicResist: 0 },
+    );
+
+    return {
+      attackDamage: base.attackDamage + itemBonus.attackDamage + overrides.attackDamage,
+      abilityPower: base.abilityPower + itemBonus.abilityPower + overrides.abilityPower,
+      armor: base.armor + itemBonus.armor + overrides.armor,
+      magicResist: base.magicResist + itemBonus.magicResist + overrides.magicResist,
+    };
   });
 
-  constructor() {
-    this.championData.loadChampions();
+  addItem() {
+    this.form.controls.itemIds.push(this.fb.control(''));
   }
 
-  openDropdown(): void {
-    this.isDropdownOpen.set(true);
-  }
-
-  closeDropdown(): void {
-    this.isDropdownOpen.set(false);
-  }
-
-  onSearchInput(): void {
-    const selectedChampion = this.selectedChampion();
-    const currentQuery = this.championQueryControl.value;
-
-    if (selectedChampion && selectedChampion.name !== currentQuery) {
-      this.championIdControl.setValue(null);
-    }
-
-    this.openDropdown();
-  }
-
-  onSearchBlur(): void {
-    this.closeDropdown();
-  }
-
-  onSearchKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-      this.closeDropdown();
-      return;
-    }
-
-    if (event.key === 'ArrowDown') {
-      this.openDropdown();
-      return;
-    }
-
-    if (event.key === 'Enter' && this.isDropdownOpen()) {
-      const firstChampion = this.filteredChampions()[0];
-      if (firstChampion) {
-        event.preventDefault();
-        this.selectChampion(firstChampion);
-      }
-    }
-  }
-
-  onChampionOptionPointerDown(event: MouseEvent, champion: ChampionOption): void {
-    event.preventDefault();
-    this.selectChampion(champion);
-  }
-
-  clearSelectedChampion(event: MouseEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    this.championIdControl.setValue(null);
-    this.championQueryControl.setValue('');
-    this.openDropdown();
-
-    queueMicrotask(() => {
-      this.elementRef.nativeElement.querySelector<HTMLInputElement>('#champion-search')?.focus();
-    });
-  }
-
-  onDocumentClick(event: MouseEvent): void {
-    const clickedNode = event.target;
-    if (!(clickedNode instanceof Element)) {
-      return;
-    }
-
-    const clickedInsidePicker = !!clickedNode.closest('.champion-picker');
-    if (!clickedInsidePicker) {
-      this.closeDropdown();
-    }
-  }
-
-  private selectChampion(champion: ChampionOption): void {
-    this.championIdControl.setValue(champion.id);
-    this.championQueryControl.setValue(champion.name);
-    this.closeDropdown();
+  removeItem(index: number) {
+    this.form.controls.itemIds.removeAt(index);
   }
 }
