@@ -41,7 +41,8 @@ export class AuthService
      */
     checkSession() 
     {
-        return this.http.get<{ subscribed: boolean }>(
+        return this.http.get<{ subscribed: boolean }>
+        (
             `${this.API_URL}/auth/session`,
             { withCredentials: true }
         ).pipe(

@@ -14,7 +14,11 @@ export class Calculator
   
   constructor()
   {
-    effect(() => console.log(this.championService.championData()))
+    effect(() => 
+    {
+      console.log(this.championService.state());
+      console.log(this.championService.version);
+    })
   }
   
 }

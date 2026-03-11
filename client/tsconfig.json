@@ -10,6 +10,7 @@
       "@layout/*": ["app/layout/*"],
       "@ui/*": ["app/ui/*"],
       "@services/*": ["app/services/*"],
+      "@models/*": ["app/models/*"],
       "@guards/*": ["app/guards/*"],
       "@pages/*": ["app/pages/*"]
     },
