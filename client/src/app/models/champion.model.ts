@@ -1,7 +1,7 @@
 export interface ChampionState 
 {
   data: Champion[];
-  error: ChampionDataError | undefined;
+  error: ChampionDataError | false;
   loading: boolean;
 }
 

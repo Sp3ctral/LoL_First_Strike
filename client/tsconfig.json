@@ -3,16 +3,15 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": "./src",
     "paths": 
     {
-      "@environments/*": ["environments/*"],
-      "@layout/*": ["app/layout/*"],
-      "@ui/*": ["app/ui/*"],
-      "@services/*": ["app/services/*"],
-      "@models/*": ["app/models/*"],
-      "@guards/*": ["app/guards/*"],
-      "@pages/*": ["app/pages/*"]
+      "@environments/*": ["./src/environments/*"],
+      "@layout/*": ["./src/app/layout/*"],
+      "@ui/*": ["./src/app/ui/*"],
+      "@services/*": ["./src/app/services/*"],
+      "@models/*": ["./src/app/models/*"],
+      "@guards/*": ["./src/app/guards/*"],
+      "@pages/*": ["./src/app/pages/*"]
     },
     "strict": true,
     "noImplicitOverride": true,

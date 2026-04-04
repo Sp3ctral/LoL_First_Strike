@@ -15,7 +15,7 @@ export class ChampionDataService
   public readonly state = signal<ChampionState>(
   {
     data: [],
-    error: undefined,
+    error: false,
     loading: true
   });
 
@@ -75,7 +75,7 @@ export class ChampionDataService
        */
       if (data.length)
       {
-        this.state.update(current => ({ ...current, data, error: undefined }));
+        this.state.update(current => ({ ...current, data, error: false }));
       }
     })
   }
